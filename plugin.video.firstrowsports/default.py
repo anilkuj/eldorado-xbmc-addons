@@ -1,10 +1,17 @@
-import xbmc, xbmcgui, urllib2, urllib, re, xbmcplugin, random
-
+import xbmc
+import xbmcgui
+import urllib2
+import urllib
+import re
+import xbmcplugin
+import random
+import os
 
 ####### Global Constants
 MainUrl = 'http://www.firstrowsports.eu'       
 pluginhandle = int(sys.argv[1])
 _Unknown = "UNKNOWN"
+AddonPath = os.getcwd()
 
 ###########################################################
 ####### Some stream types need hardcoded values
@@ -85,22 +92,22 @@ def MainPage():
     
     # Add main sport directories manually - scripting was a pain in the ass
     
-    addDir("American Football",MainUrl + "/sport/american-football.html",1,MainUrl+"/images/sports/3.png")
-    addDir("Aussie Rules",MainUrl + "/sport/aussie-rules.html",1,MainUrl+"/images/sports/17.png")    
-    addDir("Baseball",MainUrl + "/sport/baseball.html",1,MainUrl+"/images/sports/5.png")
-    addDir("Basketball",MainUrl + "/sport/basketball.html",1,MainUrl+"/images/sports/2.png")
-    addDir("Boxing / WWE / UFC",MainUrl + "/sport/boxing-wwe-ufc.html",1,MainUrl+"/images/sports/7.png")
-    addDir("Darts",MainUrl + "/sport/darts.html",1,MainUrl+"/images/sports/11.png")    
-    addDir("Football",MainUrl + "/sport/football.html",1,MainUrl+"/images/sports/1.png")
-    addDir("Golf",MainUrl + "/sport/golf.html",1,MainUrl+"/images/sports/13.png")
+    addDir("American Football",MainUrl + "/sport/american-football.html",1,AddonPath + "\Icons\Football-Ball-icon.png")
+    addDir("Aussie Rules",MainUrl + "/sport/aussie-rules.html",1,AddonPath + "\Icons\Rugby-Ball-icon.png")    
+    addDir("Baseball",MainUrl + "/sport/baseball.html",1,AddonPath + "\Icons\Baseball-icon.png")
+    addDir("Basketball",MainUrl + "/sport/basketball.html",1,AddonPath + "\Icons\Basketball-Ball-icon.png")
+    addDir("Boxing / WWE / UFC",MainUrl + "/sport/boxing-wwe-ufc.html",1,AddonPath + "\Icons\Boxing-Gloves-icon.png")
+    addDir("Darts",MainUrl + "/sport/darts.html",1,AddonPath + "\Icons\Darts-icon.png")    
+    addDir("Football",MainUrl + "/sport/football.html",1,AddonPath + "\Icons\Soccer-Ball-icon.png")
+    addDir("Golf",MainUrl + "/sport/golf.html",1,AddonPath + "\Icons\Golf-Club-Green-icon.png")
     addDir("Handball",MainUrl + "/sport/handball.html",1,MainUrl+"/images/sports/18.png")
-    addDir("Hockey",MainUrl + "/sport/ice-hockey.html",1,MainUrl+"/images/sports/4.png")
-    addDir("Motosport",MainUrl + "/sport/motosport.html",1,MainUrl+"/images/sports/10.png")
+    addDir("Hockey",MainUrl + "/sport/ice-hockey.html",1,AddonPath + "\Icons\Hockey-icon.png")
+    addDir("Motosport",MainUrl + "/sport/motosport.html",1,AddonPath + "\Icons\Motorsport-Helmet-icon.png")
     addDir("Other",MainUrl + "/sport/others.html",1,MainUrl+"/images/sports/14.png")    
-    addDir("Rugby",MainUrl + "/sport/rugby.html",1,MainUrl+"/images/sports/8.png")    
-    addDir("Snooker",MainUrl + "/sport/snooker.html",1,MainUrl+"/images/sports/12.png")        
-    addDir("Tennis",MainUrl + "/sport/tennis.html",1,MainUrl+"/images/sports/6.png")
-    addDir("TV",MainUrl + "/sport/tv-box.html",1,MainUrl+"/images/sports/16.png")
+    addDir("Rugby",MainUrl + "/sport/rugby.html",1,AddonPath + "\Icons\Rugby-Ball-icon.png")    
+    addDir("Snooker",MainUrl + "/sport/snooker.html",1,AddonPath + "\Icons\Snooker_balls-icon.png")        
+    addDir("Tennis",MainUrl + "/sport/tennis.html",1,AddonPath + "\Icons\Tennis-icon.png")
+    addDir("TV",MainUrl + "/sport/tv-box.html",1,AddonPath + "\Icons\TV-Shows-icon.png")
     xbmcplugin.endOfDirectory(pluginhandle)
 
 ### Scrape for the list of channels for a given sprot
