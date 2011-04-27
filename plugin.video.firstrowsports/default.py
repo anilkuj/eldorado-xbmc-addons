@@ -196,7 +196,7 @@ def GetRTMP(streamType, url):
         url=re.compile("src='(.+?)'").findall(html)[0]
         
         html=getURL(url)
-        rtmp=SeeonRTMP.strip('\n').replace("#",str(random.randint(1,28)))        
+        rtmp=SeeonRTMP.strip('\n').replace("#",str(random.randint(1,9)))        
         swfLink=re.compile('<param name="movie" value="(.+?)">').findall(html)[0]
         channelID=re.compile('<param name="flashvars" .+?&file=(.+?).flv.+?>').findall(html)[0]
         rtmp=rtmp + " playpath=" + channelID + " swfurl=" + swfLink + " pageurl=" + url + " swfvfy=true"
@@ -211,9 +211,9 @@ def GetRTMP(streamType, url):
         url=re.compile("<iframe src='(.+?)'").findall(html)[0] 
         
         html=getURL(url)
-        rtmpurl="rtmp://live.wii-cast.tv/redirect"
-        print rtmp
-        swf=re.compile("so.addVariable('plugins','(.+?)');").findall(html)[0]
+        print html
+        rtmpurl=re.compile("so.addVariable('streamer', '(.+?)')").findall(html)[0]
+        swf=re.compile("so.addVariable('plugins','(.+?)')").findall(html)[0]
         print swf
         playpath=re.compile("so.addVariable('file', '(.+?)');").findall(html)[0]
         print playpath
