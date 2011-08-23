@@ -18,6 +18,24 @@
   </extension>
 </addon>
 
+<addon id="plugin.video.projectfreetv"
+       name="Project Free TV"
+       version="0.0.1"
+       provider-name="Eldorado">
+  <requires>
+    <import addon="xbmc.python" version="1.0"/>
+    <import addon="script.module.urlresolver" version="0.0.1"/>
+  </requires>
+  <extension point="xbmc.python.pluginsource" library="default.py">
+        <provides>video</provides>
+  </extension>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en"></summary>
+    <description lang="en"></description>
+    <platform>all</platform>
+  </extension>
+</addon>
+
 <addon id="repository.eldorado" name="Eldorado's XBMC Addons" version="1.0.1" provider-name="eldorado">
 	<extension point="xbmc.addon.repository" name="Eldorado's XBMC Addon Repository">
 		<info compressed="false">https://github.com/Eldorados/eldorado-xbmc-addons/raw/master/addons.xml</info>
