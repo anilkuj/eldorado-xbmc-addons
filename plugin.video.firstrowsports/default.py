@@ -45,7 +45,7 @@ CastAmpPageURL = "http://castamp.com/embed.php?c=#&vwidth=640&vheight=440&domain
 
 # Wii-Cast streams
 WiiCastStreamType = "wii-cast"
-WiiCastRTMP = ""
+WiiCastRTMP = "rtmpe://212.7.212.17:1935/pub"
 
 # MIPS.tv streams
 MipsStreamType="mips"
@@ -212,11 +212,9 @@ def GetRTMP(streamType, url):
         
         html=getURL(url)
         print html
-        rtmpurl=re.compile("so.addVariable('streamer', '(.+?)')").findall(html)[0]
+        rtmpurl=WiiCastRTMP
         swf=re.compile("so.addVariable('plugins','(.+?)')").findall(html)[0]
-        print swf
         playpath=re.compile("so.addVariable('file', '(.+?)');").findall(html)[0]
-        print playpath
         rtmp=rtmpurl + " playpath=" + playpath + " swfurl=" + swf + " pageurl=" + url + " swfvfy=true"        
     
     # Ustream.tv stream

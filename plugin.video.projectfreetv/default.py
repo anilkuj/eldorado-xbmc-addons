@@ -10,13 +10,18 @@ from t0mm0.common.addon import Addon
 from t0mm0.common.net import Net
 import urlresolver
 
+from operator import itemgetter
+
+
 addon = Addon('plugin.video.projectfreetv', sys.argv)
 net = Net()
 play = addon.queries.get('play', None)
 mode = addon.queries['mode']
+section = addon.queries.get('section', None)
 
 print 'Mode: ' + str(mode)
 print 'Play: ' + str(play)
+print 'Section: ' + str(section)
 
 ################### Global Constants #################################
 
@@ -31,17 +36,25 @@ IconPath = AddonPath + "/icons/"
 
 ###################### Video URL's ###################################
 
-MegaVideoUrl = 'http://www.megavideo.com/?v='
+MegaVideoUrl = 'http://www.megavideo.com/?v=%s'
 MegaVideoHost = 'megavideo.com'
-MegaUploadUrl = 'http://www.megaupload.com/?d='
+MegaUploadUrl = 'http://www.megaupload.com/?d=%s'
 MegaUploadHost = 'megaupload.com'
-NovaMovUrl = 'http://www.novamov.com/video/'
+NovaMovUrl = 'http://www.novamov.com/video/%s'
 NovaMovHost = 'novamov.com'
-PutLockerUrl = 'http://www.putlocker.com/file/'
+PutLockerUrl = 'http://www.putlocker.com/file/%s'
 PutLockerHost = 'putlocker.com'
-MovShareUrl = 'http://www.movshare.net/video/'
+SockShareUrl = 'http://www.sockshare.com/file/%s'
+SockShareHost = 'sockshare.com'
+MovShareUrl = 'http://www.movshare.net/video/%s'
 MovShareHost = 'movshare.com'
-YouTubeUrl = 'http://www.youtube.com/watch?v='
+DivxDenUrl = 'http://www.vidxden.com/embed-%s.html'
+DivxDenHost = 'divxden.com'
+VideoWeedUrl = 'http://www.videoweed.es/file/%s'
+VideoWeedHost = 'videoweed.es'
+YouTubeUrl = 'http://www.youtube.com/watch?v=%s'
+ZShareUrl = 'http://www.zshare.net/video/%s'
+ZShareHost = 'zshare'
 
 ######################################################################
 
@@ -50,16 +63,13 @@ def AZ_Menu(type, url):
 
        
     addon.add_directory({'mode': type, 
-                         'url': url + 'numeric.html',
-                         'browse': 'alpha',
-                         'letter': '-'}, '#',
+                         'url': url + 'numeric.html'},'#',
                          img=IconPath + "numeric.png")
     for l in string.uppercase:
         addon.add_directory({'mode': type, 
-                             'url': url + str(l.lower()) + '.html',
-                             'browse': 'alpha',
-                             'letter': l}, l,
+                             'url': url + str(l.lower()) + '.html'}, l,
                              img=IconPath + l + ".png")
+                             
 ### Get List of Movies from given URL
 def GetMovieList(url):
 
@@ -69,23 +79,31 @@ def GetMovieList(url):
     for link, movie, numlinks in match:
        if re.search("../",link) is not None:
           link = link.strip('\n').replace("../","")
-          newUrl = MovieUrl+link
+          newUrl = MovieUrl + link
        else:
           newUrl = url + "/" + link
        addon.add_video_item(newUrl, {'title': movie})
-       #addon.add_directory({'mode': 'movielinks', 'url': newUrl, 'section': 'movies'}, movie + " - " + numlinks)
+       #addon.add_directory({'mode': 'movielinks', 'url': newUrl, 'section': 'movies'}, movie)
        
-def DetermineHostUrl(host):
+def DetermineHostUrl(host, linkid):
     if host == MegaVideoHost:
-       return MegaVideoUrl
+       return MegaVideoUrl % linkid
     elif host == MegaUploadHost:
-       return MegaUploadUrl
+       return MegaUploadUrl % linkid
     elif host == NovaMovHost:
-       return NovaMovUrl
+       return NovaMovUrl % linkid
     elif host == PutLockerHost:
-       return PutLockerUrl
+       return PutLockerUrl % linkid
+    elif host == SockShareHost:
+       return SockShareUrl % linkid
     elif host == MovShareHost:
-       return MovShareUrl
+       return MovShareUrl % linkid
+    elif host == DivxDenHost:
+       return DivxDenUrl % linkid
+    elif host == VideoWeedHost:
+       return VideoWeedUrl % linkid       
+    elif host == ZShareHost:
+       return ZShareUrl % linkid             
     else:
        return 'nothing'
     
@@ -97,13 +115,15 @@ def DetermineHostUrl(host):
 if play:
 
     links = {}
+    section = addon.queries.get('section', None)
     html = net.http_GET(play).content
-    
+      
     #First check for trailers
     match = re.compile('<a target="_blank" style="font-size:9pt" class="mnlcategorylist" href=".+?id=(.+?)">(.+?)</a>&nbsp;&nbsp;&nbsp;').findall(html)
+    count = 1
     for linkid, name in match:      
         #addon.add_video_item(YouTubeUrl + linkid,{'title': name})
-        link = YouTubeUrl + linkid
+        link = YouTubeUrl % linkid
         links[link] = name
         
     #Now get movie source links
@@ -116,17 +136,20 @@ if play:
 							</span>
 						</a>''').findall(html)
     for linkid, name, load, host in match:
-       link = DetermineHostUrl(host) + str(linkid)
+       link = DetermineHostUrl(host, linkid)
        links[link] = host + " - " + load
+    
+    #Display dialog box of available sources
+    #stream_url = urlresolver.choose_source(links)
     
     validsources = urlresolver.filter_urls(links.keys())
     
     if validsources:
         readable = []
-        validsources.sort(reverse=True)
         for x in validsources:
             readable.append(links[x])
         
+        readable.sort()
         dialog = xbmcgui.Dialog()
         index = dialog.select('Choose your stream', readable)
         if index >= 0:
@@ -136,8 +159,10 @@ if play:
     else:
         addon.log_error('No Playable Streams Found')
         stream_url = False
-        
-    addon.resolve_url(stream_url)    
+    
+    if stream_url:
+        addon.resolve_url(stream_url)
+    
     
 if mode == 'main': 
     addon.add_directory({'mode': 'movies', 'section': 'movies'}, 'Movies')
@@ -147,7 +172,8 @@ if mode == 'main':
 elif mode == 'movies':
     addon.add_directory({'mode': 'moviesaz', 'section': 'moviesaz'}, 'A-Z', img=IconPath + "AZ.png")
     addon.add_directory({'mode': 'moviesgenre', 'section': 'moviesgenre'}, 'Genre')
-    addon.add_directory({'mode': 'movieslatest', 'section': 'movieslatest'}, 'Latest')    
+    #addon.add_directory({'mode': 'movieslatest', 'section': 'movieslatest'}, 'Latest')
+    addon.add_video_item(MovieUrl, {'title': 'Latest'})
     addon.add_directory({'mode': 'moviespopular', 'section': 'moviespopular'}, 'Popular')
     addon.add_directory({'mode': 'moviesyear', 'section': 'moviesyear'}, 'Year')
 
@@ -162,11 +188,21 @@ elif mode == 'moviesgenre':
     # Add each link found as a directory item
     for link, genre in match:
        addon.add_directory({'mode': 'movieslist', 'url': MainUrl + link, 'section': 'movies'}, genre)
-
-   
+  
 elif mode == 'movieslatest':
     url = MovieUrl
-    GetMovieLinks(url)
+    html = net.http_GET(url).content
+        
+    match = re.compile('''<a onclick='visited.+?' href=".+?" target="_blank">
+							<div>(.+?)</div>
+							<span>
+								Loading Time: <span class='.+?</span><br/>
+								Host: .+?<br/>
+								Submitted: .+?
+							</span>
+						</a>''').findall(html)
+    for name in match:
+       addon.add_video_item(url, {'title': name})
    
 elif mode == 'moviespopular':
     url = MainUrl
@@ -210,6 +246,15 @@ elif mode == 'tv':
 
 elif mode == 'tvaz':
     AZ_Menu('tvlist',TVUrl)
+    
+elif mode == 'tvlist':
+
+    url = TVUrl
+    html = net.http_GET(url).content
+    match = re.compile('''<td width=".+?" class="mnlcategorylist"><a href="(.+?)"><b>(.+?)<''').findall(html)
+    for link, name in match:
+        addon.add_directory({'mode': 'tvlinks', 'url': url + link, 'section': 'tvshows'}, name) 
+    
 
 elif mode == 'resolver_settings':
     urlresolver.display_settings()
