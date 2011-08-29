@@ -124,7 +124,7 @@ if play:
     for linkid, name in match:      
         #addon.add_video_item(YouTubeUrl + linkid,{'title': name})
         link = YouTubeUrl % linkid
-        links[link] = name
+        links[link] = name     
         
     #Now get movie source links
     match = re.compile('''<a onclick='visited.+?' href=".+?id=(.+?)" target="_blank">
@@ -149,7 +149,7 @@ if play:
         for x in validsources:
             readable.append(links[x])
         
-        readable.sort()
+        print 'READABLE=' + str(readable)
         dialog = xbmcgui.Dialog()
         index = dialog.select('Choose your stream', readable)
         if index >= 0:
@@ -172,8 +172,8 @@ if mode == 'main':
 elif mode == 'movies':
     addon.add_directory({'mode': 'moviesaz', 'section': 'moviesaz'}, 'A-Z', img=IconPath + "AZ.png")
     addon.add_directory({'mode': 'moviesgenre', 'section': 'moviesgenre'}, 'Genre')
-    #addon.add_directory({'mode': 'movieslatest', 'section': 'movieslatest'}, 'Latest')
-    addon.add_video_item(MovieUrl, {'title': 'Latest'})
+    addon.add_directory({'mode': 'movieslatest', 'section': 'movieslatest'}, 'Latest')
+    #addon.add_video_item(MovieUrl, {'title': 'Latest'})
     addon.add_directory({'mode': 'moviespopular', 'section': 'moviespopular'}, 'Popular')
     addon.add_directory({'mode': 'moviesyear', 'section': 'moviesyear'}, 'Year')
 
@@ -190,20 +190,21 @@ elif mode == 'moviesgenre':
        addon.add_directory({'mode': 'movieslist', 'url': MainUrl + link, 'section': 'movies'}, genre)
   
 elif mode == 'movieslatest':
+    latestlist = []
     url = MovieUrl
     html = net.http_GET(url).content
         
     match = re.compile('''<a onclick='visited.+?' href=".+?" target="_blank">
-							<div>(.+?)</div>
-							<span>
-								Loading Time: <span class='.+?</span><br/>
-								Host: .+?<br/>
-								Submitted: .+?
-							</span>
-						</a>''').findall(html)
+							<div>(.+?)</div>''').findall(html)
     for name in match:
-       addon.add_video_item(url, {'title': name})
-   
+        latestlist.append(name)
+
+    #convert list to a set which removes duplicates, then back to a list
+    latestlist = list(set(latestlist))
+
+    for movie in latestlist:
+        addon.add_video_item(MovieUrl, {'title': movie})
+
 elif mode == 'moviespopular':
     url = MainUrl
     html = net.http_GET(url).content
@@ -237,15 +238,22 @@ elif mode == 'movielinks':
 elif mode == 'tv':
     addon.add_directory({'mode': 'tvaz', 'section': 'tvaz'}, 'A-Z', img=IconPath + "AZ.png")
     addon.add_directory({'mode': 'tvlatest', 'section': 'tvlatest'}, 'Latest')
-    addon.add_directory({'mode': 'tv24hours', 'section': 'tv24hours'}, 'Last 24 Hours')
-    addon.add_directory({'mode': 'tv3days', 'section': 'tv3days'}, 'Last 3 Days')
-    addon.add_directory({'mode': 'tv7days', 'section': 'tv7days'}, 'Last 7 Days')
-    addon.add_directory({'mode': 'tvmonth', 'section': 'tvmonth'}, 'This Month')
-    addon.add_directory({'mode': 'tv365days', 'section': 'tv365days'}, 'Last 365 Days')
+    addon.add_directory({'mode': 'tvlastadded', 'section': 'tv24hours', 'url': 'index_last.html'}, 'Last 24 Hours')
+    addon.add_directory({'mode': 'tvlastadded', 'section': 'tv3days', 'url': 'index_last_3_days.html'}, 'Last 3 Days')
+    addon.add_directory({'mode': 'tvlastadded', 'section': 'tv7days', 'url': 'index_last_7_days.html'}, 'Last 7 Days')
+    addon.add_directory({'mode': 'tvlastadded', 'section': 'tvmonth', 'url': 'index_last_30_days.html'}, 'This Month')
+    addon.add_directory({'mode': 'tvlastadded', 'section': 'tv90days', 'url': 'index_last_365_days.html'}, 'Last 90 Days')
     addon.add_directory({'mode': 'tvpopular', 'section': 'tvpopular'}, 'Popular')
 
 elif mode == 'tvaz':
-    AZ_Menu('tvlist',TVUrl)
+    AZ_Menu('tv24hours',TVUrl)
+
+elif mode == 'tvlastadded':
+    url = TVUrl + addon.queries['url']
+    html = net.http_GET(url).content
+    match = re.compile('class="mnlcategorylist"><a href="(.+?)"><b>(.+?)<').findall(html)
+    for link, name in match:
+        addon.add_directory({'mode': 'tvseries', 'url': TVUrl + link, 'section': 'tvshows'}, name)  
     
 elif mode == 'tvlist':
 
