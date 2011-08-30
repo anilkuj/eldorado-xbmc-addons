@@ -18,9 +18,11 @@ net = Net()
 play = addon.queries.get('play', None)
 mode = addon.queries['mode']
 section = addon.queries.get('section', None)
+url = addon.queries.get('url', None)
 
 print 'Mode: ' + str(mode)
 print 'Play: ' + str(play)
+print 'URL: ' + str(url)
 print 'Section: ' + str(section)
 
 ################### Global Constants #################################
@@ -63,11 +65,11 @@ def AZ_Menu(type, url):
 
        
     addon.add_directory({'mode': type, 
-                         'url': url + 'numeric.html'},'#',
+                         'url': url + 'numeric.html', 'letter': '#'},'#',
                          img=IconPath + "numeric.png")
     for l in string.uppercase:
         addon.add_directory({'mode': type, 
-                             'url': url + str(l.lower()) + '.html'}, l,
+                             'url': url + str(l.lower()) + '.html', 'letter': l}, l,
                              img=IconPath + l + ".png")
                              
 ### Get List of Movies from given URL
@@ -115,51 +117,63 @@ def DetermineHostUrl(host, linkid):
 if play:
 
     links = {}
-    section = addon.queries.get('section', None)
     html = net.http_GET(play).content
-      
-    #First check for trailers
-    match = re.compile('<a target="_blank" style="font-size:9pt" class="mnlcategorylist" href=".+?id=(.+?)">(.+?)</a>&nbsp;&nbsp;&nbsp;').findall(html)
-    count = 1
-    for linkid, name in match:      
-        #addon.add_video_item(YouTubeUrl + linkid,{'title': name})
-        link = YouTubeUrl % linkid
-        links[link] = name     
+           
+    #Check for movie source links
+    if re.search(MovieUrl,play):
         
-    #Now get movie source links
-    match = re.compile('''<a onclick='visited.+?' href=".+?id=(.+?)" target="_blank">
-							<div>(.+?)</div>
-							<span>
-								Loading Time: <span class='.+?'>(.+?)</span><br/>
-								Host: (.+?)<br/>
-								Submitted: .+?
-							</span>
-						</a>''').findall(html)
-    for linkid, name, load, host in match:
-       link = DetermineHostUrl(host, linkid)
-       links[link] = host + " - " + load
+        #First check for trailers
+        match = re.compile('<a target="_blank" style="font-size:9pt" class="mnlcategorylist" href=".+?id=(.+?)">(.+?)</a>&nbsp;&nbsp;&nbsp;').findall(html)
+        for linkid, name in match:      
+            link = YouTubeUrl % linkid
+            links[link] = name     
+        
+        #Now Add movie source links
+        match = re.compile('''<a onclick=.+? href=".+?id=(.+?)" target=.+?<div>.+?(|part [0-9]* of [0-9]*)</div>.+?<span class='.+?'>(.+?)</span>.+?Host: (.+?)<br/>.+?class="report">.+?([0-9]*[0-9]%) Said Work''',re.DOTALL).findall(html)
+        for linkid, name, load, host, working in match:
+            link = DetermineHostUrl(host, linkid)
+            if name:
+               name = name.title()
+            else:
+               name = 'Full'
+            links[link] = name + ' - ' + host + ' - ' + load + ' - ' + working
+
+    #Check for tv show source links
+    if re.search(TVUrl,play):
+        #r = re.search('<td class="episode"><a name=".+?"></a><b>%s</b>(.+?)<td class="episode">' % episode, html, re.DOTALL)
+        #if r:
+            match = re.compile('''<a onclick=.+? href=".+?id=(.+?)" target=.+?<div>(.+?)</div>.+?<span class='.+?'>(.+?)</span>.+?Host: (.+?)<br/>''',re.DOTALL).findall(html)
+            for linkid, name, load, host in match:    
+                link = DetermineHostUrl(host, linkid)
+                links[link] = name + ' - ' + host + ' - ' + load
     
     #Display dialog box of available sources
     #stream_url = urlresolver.choose_source(links)
     
+    #Filter out unsupported stream types
     validsources = urlresolver.filter_urls(links.keys())
     
+    #Add filtered links to a list to launch a dialog box
     if validsources:
         readable = []
         for x in validsources:
             readable.append(links[x])
         
-        print 'READABLE=' + str(readable)
         dialog = xbmcgui.Dialog()
         index = dialog.select('Choose your stream', readable)
+        
+        #Resolve the final video url for the selected stream
         if index >= 0:
             stream_url = urlresolver.resolve(validsources[index])
         else:
             stream_url = False
     else:
+        dialog = xbmcgui.Dialog()
+        dialog.ok('No Streams', 'No Playable Streams Found')
         addon.log_error('No Playable Streams Found')
         stream_url = False
     
+    #Play the stream
     if stream_url:
         addon.resolve_url(stream_url)
     
@@ -194,8 +208,7 @@ elif mode == 'movieslatest':
     url = MovieUrl
     html = net.http_GET(url).content
         
-    match = re.compile('''<a onclick='visited.+?' href=".+?" target="_blank">
-							<div>(.+?)</div>''').findall(html)
+    match = re.compile('''<a onclick='visited.+?' href=".+?" target=.+?<div>(.+?)</div>''',re.DOTALL).findall(html)
     for name in match:
         latestlist.append(name)
 
@@ -208,9 +221,7 @@ elif mode == 'movieslatest':
 elif mode == 'moviespopular':
     url = MainUrl
     html = net.http_GET(url).content
-    match = re.compile('''<tr>
-       <td><div align="center"><a
-href="(.+?)">(.+?)</a></div></td>''').findall(html)
+    match = re.compile('''<tr>.+?<div align="center"><a.+?href="(.+?)">(.+?)</a></div></td>''',re.DOTALL).findall(html)
 
     # Add each link found as a directory item
     for link, name in match:
@@ -225,7 +236,7 @@ elif mode == 'moviesyear':
 
     # Add each link found as a directory item
     for link, year in match:
-       addon.add_directory({'mode': 'movieslist', 'url': url + link, 'section': 'movies'}, year) 
+       addon.add_directory({'mode': 'movieslist', 'url': url + urllib.quote(link), 'section': 'movies'}, year) 
     
 elif mode == 'movieslist':
    url = addon.queries['url']
@@ -246,23 +257,56 @@ elif mode == 'tv':
     addon.add_directory({'mode': 'tvpopular', 'section': 'tvpopular'}, 'Popular')
 
 elif mode == 'tvaz':
-    AZ_Menu('tv24hours',TVUrl)
+    AZ_Menu('tvseries-az',TVUrl)
+
+elif mode == 'tvseries-az':
+    url = TVUrl
+    letter = addon.queries['letter']
+    
+    html = net.http_GET(url).content
+    r = re.search('<a name="%s">(.+?)<a name=' % letter, html, re.DOTALL)
+    
+    if r:
+        match = re.compile('class="mnlcategorylist"><a href="(.+?)"><b>(.+?)</b>').findall(r.group(1))
+        for link, name in match:
+            addon.add_directory({'mode': 'tvseasons', 'url': TVUrl + link, 'section': 'tvshows'}, name)  
 
 elif mode == 'tvlastadded':
     url = TVUrl + addon.queries['url']
     html = net.http_GET(url).content
-    match = re.compile('class="mnlcategorylist"><a href="(.+?)"><b>(.+?)<').findall(html)
+    match = re.compile('class="mnlcategorylist"><a href="(.+?)#.+?"><b>(.+?)<').findall(html)
     for link, name in match:
-        addon.add_directory({'mode': 'tvseries', 'url': TVUrl + link, 'section': 'tvshows'}, name)  
-    
-elif mode == 'tvlist':
+        addon.add_directory({'mode': 'tvepisodes', 'url': TVUrl + link, 'section': 'tvshows'}, name)  
 
-    url = TVUrl
+elif mode == 'tvpopular':
+    url = MainUrl
     html = net.http_GET(url).content
-    match = re.compile('''<td width=".+?" class="mnlcategorylist"><a href="(.+?)"><b>(.+?)<''').findall(html)
+    match = re.compile('href="(.+?)">(.+?)</a></div></td>\s\s.+?</tr>').findall(html)
     for link, name in match:
-        addon.add_directory({'mode': 'tvlinks', 'url': url + link, 'section': 'tvshows'}, name) 
+        if name != "...more":
+            addon.add_directory({'mode': 'tvseasons', 'url': link, 'section': 'tvshows'}, name)
     
+elif mode == 'tvseries':
+    url = TVUrl  
+    html = net.http_GET(url).content
+    match = re.compile('class="mnlcategorylist"><a href="(.+?)"><b>(.+?)</b></a> </td>').findall(html)
+    for link, name in match:
+        addon.add_directory({'mode': 'tvseasons', 'url': TVUrl + link, 'section': 'tvshows'}, name)       
+
+elif mode == 'tvseasons':
+    url = addon.queries['url']
+    html = net.http_GET(url).content
+    match = re.compile('class="mnlcategorylist"><a href="(.+?)"><b>(.+?)</b></a>(.+?)</td>').findall(html)
+    for link, season, episodes in match:
+        addon.add_directory({'mode': 'tvepisodes', 'url': url + '/' + link, 'section': 'tvshows'}, season + episodes)
+
+elif mode == 'tvepisodes':
+    url = addon.queries['url']
+    html = net.http_GET(url).content
+    match = re.compile('<td class="episode">.+?b>(.+?)</b>').findall(html)
+    for name in match:
+        #addon.add_directory({'mode': 'tvplay', 'url': url, 'section': 'tvshows'}, name)          
+        addon.add_video_item(url, {'title': name})
 
 elif mode == 'resolver_settings':
     urlresolver.display_settings()
