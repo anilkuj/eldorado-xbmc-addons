@@ -1,36 +1,34 @@
-import xbmc
-import xbmcgui
-import urllib
-import urllib2
-import os
-import re
-import string
-import xbmcplugin
+import xbmc, xbmcgui, xbmcaddon, xbmcplugin
+import urllib, urllib2
+import re, string
 from t0mm0.common.addon import Addon
 from t0mm0.common.net import Net
 import urlresolver
-
-from operator import itemgetter
-
+#from metautils import metahandlers, metacontainers
 
 addon = Addon('plugin.video.projectfreetv', sys.argv)
+xaddon = xbmcaddon.Addon(id='plugin.video.projectfreetv')
 net = Net()
+
+##### Queries ##########
 play = addon.queries.get('play', None)
 mode = addon.queries['mode']
 section = addon.queries.get('section', None)
 url = addon.queries.get('url', None)
+video = addon.queries.get('video', None)
 
 print 'Mode: ' + str(mode)
 print 'Play: ' + str(play)
 print 'URL: ' + str(url)
 print 'Section: ' + str(section)
+print 'Video: ' + str(video)
 
 ################### Global Constants #################################
 
 MainUrl = 'http://www.free-tv-video-online.me/'
 MovieUrl = MainUrl + "movies/"
 TVUrl = MainUrl + "internet/"
-AddonPath = os.getcwd()
+AddonPath = xaddon.getAddonInfo('path')
 IconPath = AddonPath + "/icons/"
 #pluginhandle = int(sys.argv[1])
 
@@ -52,6 +50,8 @@ MovShareUrl = 'http://www.movshare.net/video/%s'
 MovShareHost = 'movshare.com'
 DivxDenUrl = 'http://www.vidxden.com/embed-%s.html'
 DivxDenHost = 'divxden.com'
+VideoBBUrl = 'http://www.videobb.com/video/%s'
+VideoBBHost = 'videobb.com'
 VideoWeedUrl = 'http://www.videoweed.es/file/%s'
 VideoWeedHost = 'videoweed.es'
 YouTubeUrl = 'http://www.youtube.com/watch?v=%s'
@@ -62,8 +62,7 @@ ZShareHost = 'zshare'
 
 ### Create A-Z Menu
 def AZ_Menu(type, url):
-
-       
+     
     addon.add_directory({'mode': type, 
                          'url': url + 'numeric.html', 'letter': '#'},'#',
                          img=IconPath + "numeric.png")
@@ -84,9 +83,9 @@ def GetMovieList(url):
           newUrl = MovieUrl + link
        else:
           newUrl = url + "/" + link
-       addon.add_video_item(newUrl, {'title': movie})
-       #addon.add_directory({'mode': 'movielinks', 'url': newUrl, 'section': 'movies'}, movie)
+       addon.add_video_item(newUrl, {'title': movie}, {'section': 'movies'})
        
+#Determine stream type and build URL to pass to resolver
 def DetermineHostUrl(host, linkid):
     if host == MegaVideoHost:
        return MegaVideoUrl % linkid
@@ -102,50 +101,54 @@ def DetermineHostUrl(host, linkid):
        return MovShareUrl % linkid
     elif host == DivxDenHost:
        return DivxDenUrl % linkid
+    elif host == VideoBBHost:
+       return VideoBBUrl % linkid
     elif host == VideoWeedHost:
        return VideoWeedUrl % linkid       
     elif host == ZShareHost:
        return ZShareUrl % linkid             
     else:
        return 'nothing'
-    
-#if play:
-#    stream_url = urlresolver.resolve(play)
-#    print 'Stream URL: ' + str(stream_url)
-#    addon.resolve_url(stream_url)
 
 if play:
 
     links = {}
     html = net.http_GET(play).content
            
-    #Check for movie source links
-    if re.search(MovieUrl,play):
+    if section == 'movies':
         
-        #First check for trailers
+        #Check for trailers
         match = re.compile('<a target="_blank" style="font-size:9pt" class="mnlcategorylist" href=".+?id=(.+?)">(.+?)</a>&nbsp;&nbsp;&nbsp;').findall(html)
         for linkid, name in match:      
             link = YouTubeUrl % linkid
-            links[link] = name     
+            links[link] = name        
+     
+    elif section == 'latestmovies':
+        #Search within HTML to only get portion of links specific to movie name
+        # TO DO - currently does not return enough of the header for the first link
+        r = re.search('<div>%s</div>(.+?)(<div>(?!%s)|<p align="center">)' % (video, video), html, re.DOTALL)
+        if r:
+            html = r.group(0)
+        else:
+            html = ''
+    
+    elif section == 'tvshows':
+        #Search within HTML to only get portion of links specific to episode requested
+        r = re.search('<td class="episode"><a name=".+?"></a><b>%s</b>(.+?)(<a name=|<p align="center">)' % video, html, re.DOTALL)
+        if r:
+            html = r.group(1)
+        else:
+            html = ''   
         
-        #Now Add movie source links
-        match = re.compile('''<a onclick=.+? href=".+?id=(.+?)" target=.+?<div>.+?(|part [0-9]* of [0-9]*)</div>.+?<span class='.+?'>(.+?)</span>.+?Host: (.+?)<br/>.+?class="report">.+?([0-9]*[0-9]%) Said Work''',re.DOTALL).findall(html)
-        for linkid, name, load, host, working in match:
-            link = DetermineHostUrl(host, linkid)
-            if name:
-               name = name.title()
-            else:
-               name = 'Full'
-            links[link] = name + ' - ' + host + ' - ' + load + ' - ' + working
-
-    #Check for tv show source links
-    if re.search(TVUrl,play):
-        #r = re.search('<td class="episode"><a name=".+?"></a><b>%s</b>(.+?)<td class="episode">' % episode, html, re.DOTALL)
-        #if r:
-            match = re.compile('''<a onclick=.+? href=".+?id=(.+?)" target=.+?<div>(.+?)</div>.+?<span class='.+?'>(.+?)</span>.+?Host: (.+?)<br/>''',re.DOTALL).findall(html)
-            for linkid, name, load, host in match:    
-                link = DetermineHostUrl(host, linkid)
-                links[link] = name + ' - ' + host + ' - ' + load
+    #Now Add video source links
+    match = re.compile('''<a onclick=.+? href=".+?id=(.+?)" target=.+?<div>.+?(|part [0-9]* of [0-9]*)</div>.+?<span class='.+?'>(.+?)</span>.+?Host: (.+?)<br/>.+?class="report">.+?([0-9]*[0-9]%) Said Work''',re.DOTALL).findall(html)
+    for linkid, name, load, host, working in match:
+        link = DetermineHostUrl(host, linkid)
+        if name:
+           name = name.title()
+        else:
+           name = 'Full'
+        links[link] = name + ' - ' + host + ' - ' + load + ' - ' + working
     
     #Display dialog box of available sources
     #stream_url = urlresolver.choose_source(links)
@@ -179,15 +182,14 @@ if play:
     
     
 if mode == 'main': 
-    addon.add_directory({'mode': 'movies', 'section': 'movies'}, 'Movies')
+    addon.add_directory({'mode': 'movies', 'section': 'movies'}, 'Movies', img=IconPath + 'Movies.png')
     addon.add_directory({'mode': 'tv', 'section': 'tv'}, 'TV Shows')
-    addon.add_directory({'mode': 'resolver_settings'}, 'Resolver Settings', is_folder=False)
+    addon.add_directory({'mode': 'resolver_settings'}, 'Resolver Settings', is_folder=False, img=IconPath + 'Resolver_Settings.png')
 
 elif mode == 'movies':
     addon.add_directory({'mode': 'moviesaz', 'section': 'moviesaz'}, 'A-Z', img=IconPath + "AZ.png")
-    addon.add_directory({'mode': 'moviesgenre', 'section': 'moviesgenre'}, 'Genre')
+    addon.add_directory({'mode': 'moviesgenre', 'section': 'moviesgenre'}, 'Genre', img=IconPath + 'Genre.png')
     addon.add_directory({'mode': 'movieslatest', 'section': 'movieslatest'}, 'Latest')
-    #addon.add_video_item(MovieUrl, {'title': 'Latest'})
     addon.add_directory({'mode': 'moviespopular', 'section': 'moviespopular'}, 'Popular')
     addon.add_directory({'mode': 'moviesyear', 'section': 'moviesyear'}, 'Year')
 
@@ -216,7 +218,7 @@ elif mode == 'movieslatest':
     latestlist = list(set(latestlist))
 
     for movie in latestlist:
-        addon.add_video_item(MovieUrl, {'title': movie})
+        addon.add_video_item(MovieUrl, {'title': movie}, {'section': 'latestmovies', 'video': movie})
 
 elif mode == 'moviespopular':
     url = MainUrl
@@ -226,8 +228,7 @@ elif mode == 'moviespopular':
     # Add each link found as a directory item
     for link, name in match:
        if name != "...more":
-          addon.add_video_item(link, {'title': name})
-          #addon.add_directory({'mode': 'movielinks', 'url': link, 'section': 'movies'}, name) 
+          addon.add_video_item(link, {'title': name}, {'section': 'movies'})
 
 elif mode == 'moviesyear':
     url = MovieUrl
@@ -248,7 +249,7 @@ elif mode == 'movielinks':
 
 elif mode == 'tv':
     addon.add_directory({'mode': 'tvaz', 'section': 'tvaz'}, 'A-Z', img=IconPath + "AZ.png")
-    addon.add_directory({'mode': 'tvlatest', 'section': 'tvlatest'}, 'Latest')
+    #addon.add_directory({'mode': 'tvlatest', 'section': 'tvlatest'}, 'Latest')
     addon.add_directory({'mode': 'tvlastadded', 'section': 'tv24hours', 'url': 'index_last.html'}, 'Last 24 Hours')
     addon.add_directory({'mode': 'tvlastadded', 'section': 'tv3days', 'url': 'index_last_3_days.html'}, 'Last 3 Days')
     addon.add_directory({'mode': 'tvlastadded', 'section': 'tv7days', 'url': 'index_last_7_days.html'}, 'Last 7 Days')
@@ -264,7 +265,7 @@ elif mode == 'tvseries-az':
     letter = addon.queries['letter']
     
     html = net.http_GET(url).content
-    r = re.search('<a name="%s">(.+?)<a name=' % letter, html, re.DOTALL)
+    r = re.search('<a name="%s">(.+?)(<a name=|</table>)' % letter, html, re.DOTALL)
     
     if r:
         match = re.compile('class="mnlcategorylist"><a href="(.+?)"><b>(.+?)</b>').findall(r.group(1))
@@ -305,8 +306,7 @@ elif mode == 'tvepisodes':
     html = net.http_GET(url).content
     match = re.compile('<td class="episode">.+?b>(.+?)</b>').findall(html)
     for name in match:
-        #addon.add_directory({'mode': 'tvplay', 'url': url, 'section': 'tvshows'}, name)          
-        addon.add_video_item(url, {'title': name})
+        addon.add_video_item(url,{'title':name},{'section': 'tvshows', 'video': name})
 
 elif mode == 'resolver_settings':
     urlresolver.display_settings()
