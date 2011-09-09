@@ -60,6 +60,31 @@ ZShareHost = 'zshare'
 
 ######################################################################
 
+### Temp Add Video
+def add_video(play, infolabels, queries=None, img='', fanart='', resolved=False, 
+                 total_items=0, playlist=False, item_type='video'):
+    
+    if queries:
+        query = '&' + urllib.urlencode(queries)
+    else:
+        query = ''             
+    infolabels = addon.unescape_dict(infolabels)
+    if not resolved:
+        play = addon.build_plugin_url({'play': play}) + query
+    listitem = xbmcgui.ListItem(infolabels['title'], iconImage=img, 
+                                thumbnailImage=img)
+    listitem.setInfo(item_type, infolabels)
+    listitem.setProperty('IsPlayable', 'true')
+    listitem.setProperty('fanart_image', fanart)
+    if playlist is not False:
+        addon.log_debug('adding item: %s - %s to playlist' % \
+                                                (infolabels['title'], play))
+        playlist.add(play, listitem)
+    else:
+        addon.log_debug('adding item: %s - %s' % (infolabels['title'], play))
+        xbmcplugin.addDirectoryItem(addon.handle, play, listitem, 
+                                    isFolder=False, totalItems=total_items)
+
 ### Create A-Z Menu
 def AZ_Menu(type, url):
      
@@ -83,7 +108,7 @@ def GetMovieList(url):
           newUrl = MovieUrl + link
        else:
           newUrl = url + "/" + link
-       addon.add_video_item(newUrl, {'title': movie}, {'section': 'movies'})
+       add_video(newUrl, {'title': movie}, {'section': 'movies'})
        
 #Determine stream type and build URL to pass to resolver
 def DetermineHostUrl(host, linkid):
@@ -218,7 +243,7 @@ elif mode == 'movieslatest':
     latestlist = list(set(latestlist))
 
     for movie in latestlist:
-        addon.add_video_item(MovieUrl, {'title': movie}, {'section': 'latestmovies', 'video': movie})
+        add_video(MovieUrl, {'title': movie}, {'section': 'latestmovies', 'video': movie})
 
 elif mode == 'moviespopular':
     url = MainUrl
@@ -228,7 +253,7 @@ elif mode == 'moviespopular':
     # Add each link found as a directory item
     for link, name in match:
        if name != "...more":
-          addon.add_video_item(link, {'title': name}, {'section': 'movies'})
+          add_video(link, {'title': name}, {'section': 'movies'})
 
 elif mode == 'moviesyear':
     url = MovieUrl
@@ -303,10 +328,10 @@ elif mode == 'tvseasons':
 
 elif mode == 'tvepisodes':
     url = addon.queries['url']
-    html = net.http_GET(url).content
+    html = net.http_GET(url).content.encode('utf-8')
     match = re.compile('<td class="episode">.+?b>(.+?)</b>').findall(html)
     for name in match:
-        addon.add_video_item(url,{'title':name},{'section': 'tvshows', 'video': name})
+        add_video(url,{'title':name},{'section': 'tvshows', 'video': name})
 
 elif mode == 'resolver_settings':
     urlresolver.display_settings()
