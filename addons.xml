@@ -2,7 +2,26 @@
 <addons>
 <addon id="plugin.video.projectfreetv"
        name="Project Free TV"
-       version="0.0.5"
+       version="0.0.6"
+       provider-name="Eldorado">
+  <requires>
+    <import addon="xbmc.python" version="1.0"/>
+    <import addon="script.module.urlresolver" version="0.0.1"/>
+    <import addon="script.module.t0mm0.common" version="0.0.1"/>
+  </requires>
+  <extension point="xbmc.python.pluginsource" library="default.py">
+        <provides>video</provides>
+  </extension>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en"></summary>
+    <description lang="en"></description>
+    <platform>all</platform>
+  </extension>
+</addon>
+
+<addon id="plugin.video.redlettermedia"
+       name="Red Letter Media"
+       version="0.0.1"
        provider-name="Eldorado">
   <requires>
     <import addon="xbmc.python" version="1.0"/>
