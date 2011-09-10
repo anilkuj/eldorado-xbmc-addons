@@ -27,10 +27,24 @@ AddonPath = xaddon.getAddonInfo('path')
 IconPath = AddonPath + "/icons/"
 
 ######################################################################
+
+
+# Temporary function to grab html even when encountering an error
+# Some pages on the site return 404 even though the html is there
+def get_http_error(url):
+    req = urllib2.Request(url)
+    req.add_header('User-Agent', net._user_agent)
+    try:
+        response = urllib2.urlopen(req)
+        html = response.read()
+    except urllib2.HTTPError, error:
+        html = error.read()
+    
+    return html
                            
 if play:
 
-    html = net.http_GET(play).content
+    html = get_http_error(play)
     
     #Check if it's a YouTube video first
     youtube = re.search('src="(http://www.youtube.com/embed/.+?)"',html)
@@ -76,7 +90,7 @@ if mode == 'main':
 
 elif mode == 'plinkett':
     url = addon.queries['url']
-    html = net.http_GET(url).content
+    html = get_http_error(url)
     
     r = re.search('Plinkett Reviews</a>.+?<ul class="sub-menu">(.+?)</ul>', html, re.DOTALL)
     if r:
@@ -90,36 +104,31 @@ elif mode == 'plinkett':
 
 elif mode == 'plinkettreviews':
     url = addon.queries['url']
-    html = net.http_GET(url).content
+    html = get_http_error(url)
 
     match = re.compile('<td.+?<a href="(.+?)".+?img src="(.+?)"').findall(html)
-    for link, poster in match:
-        #Very hackish way to eliminate videos I don't want in this section
-        #r = re.search(url,link)
-        #if not r:
-
+    for link, thumb in match:
         name = link.replace(url,'').replace('-',' ').replace('/',' ').title()
         if re.search(url,link):
             newlink = link
         else:
             newlink = url + link
-        addon.add_video_item(newlink,{'title':name},img=poster)
+        addon.add_video_item(newlink,{'title':name},img=thumb)
 
 elif mode == 'halfbag':
     url = addon.queries['url']
-    html = net.http_GET(url).content
+    html = get_http_error(url)
 
     match = re.compile('<td width=270><a href="(.+?)" ><img src="(.+?)"></a></td>').findall(html)
     
     episodenum = 1
-    for link, poster in match:
-        addon.add_video_item(link,{'title':'Episode ' + str(episodenum)},img=poster)
-        #addon.add_directory({'mode': 'hbepisode', 'url': link}, 'Episode ' + str(episodenum), img=poster)
+    for link, thumb in match:
+        addon.add_video_item(link,{'title':'Episode ' + str(episodenum)},img=thumb)
         episodenum += 1
     
 elif mode == 'featurefilms':
     url = addon.queries['url']
-    html = net.http_GET(url).content
+    html = get_http_error(url)
     
     r = re.search('Feature Films</a>.+?<ul class="sub-menu">(.+?)</ul>', html, re.DOTALL)
     if r:
@@ -127,7 +136,7 @@ elif mode == 'featurefilms':
     else:
         match = None
            
-    #poster = re.compile('<td><a href=".+?"><img src="(.+?)" ></a></td>').findall(html)
+    #thumb = re.compile('<td><a href=".+?"><img src="(.+?)" ></a></td>').findall(html)
 
     #Add each link found as a directory item
     for link, name in match:
@@ -135,15 +144,26 @@ elif mode == 'featurefilms':
 
 elif mode == 'shortfilms':
     url = addon.queries['url']
-    html = net.http_GET(url).content
+    html = get_http_error(url)
 
-    r = re.search('Short Films</a><ul class="sub-menu">(.+?)</ul>)', html, re.DOTALL)
+    r = re.search('''Short Films</a>.+?<ul class="sub-menu">(.+?)</ul>''', html, re.DOTALL)
     if r:
-        match = re.compile('<li.+?<a href="(.+?)">(.+?)</a></li>').findall(r.group(1))
+        match = re.compile('<a href="(.+?)">(.+?)</a></li>').findall(r.group(1))
             
     # Add each link found as a directory item
     for link, name in match:
        addon.add_directory({'mode': 'shortseason', 'url': link}, name)  
+
+elif mode == 'shortseason':
+    url = addon.queries['url']
+    html = get_http_error(url)
+    
+    match = re.compile('<td><a href="(.+?)".*><img src="(.+?)".*></a></td>').findall(html)
+
+    # Add each link found as a video item
+    for link, thumb in match:
+        name = link.replace(url,'').replace('-',' ').replace('/',' ').title()
+        addon.add_video_item(link,{'title': name},img=thumb)
 
 if not play:
     addon.end_of_directory()
