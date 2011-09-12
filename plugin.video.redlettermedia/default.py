@@ -4,6 +4,7 @@ import re
 import urlresolver
 from t0mm0.common.addon import Addon
 from t0mm0.common.net import Net
+from elementtree.ElementTree import parse
 
 addon = Addon('plugin.video.redlettermedia', sys.argv)
 xaddon = xbmcaddon.Addon(id='plugin.video.redlettermedia')
@@ -47,7 +48,7 @@ if play:
     html = get_http_error(play)
     
     #Check if it's a YouTube video first
-    youtube = re.search('src="(http://www.youtube.com/embed/.+?)"',html)
+    youtube = re.search('src="(http://www.youtube.com/[v|embed]*/[0-9A-Za-z_\-]+).+?"',html)  
     
     if youtube:
         stream_url = urlresolver.resolve(youtube.group(1))
@@ -72,8 +73,21 @@ if play:
                 api_url = False
        
         if api_url:
-            html = net.http_GET(api_url).content 
-            stream_url = re.search('<role>Source</role>.+?<link type=".+?" href="(.+?)" />', html, re.DOTALL).group(1)
+            links = []
+            roles = []
+            
+            tree = parse(urllib.urlopen(api_url))
+            for media in tree.getiterator('media'):
+                for link in media.getiterator('link'):
+                    links.append(link.get('href'))
+                    roles.append(media.findtext('role'))
+            
+            dialog = xbmcgui.Dialog()
+            index = dialog.select('Choose a video source', roles)          
+            if index >= 0:
+                stream_url = links[index]
+            else:
+                stream_url = False
         else:
             stream_url = False
     
@@ -108,8 +122,9 @@ elif mode == 'plinkettreviews':
 
     match = re.compile('<td.+?<a href="(.+?)".+?img src="(.+?)"').findall(html)
     for link, thumb in match:
-        name = link.replace(url,'').replace('-',' ').replace('/',' ').title()
-        if re.search(url,link):
+        name = re.search("[http://]*[a-z./-]*/(.+?)/",'/' + link).group(1).replace('-',' ').replace('/',' ').title()
+        
+        if re.search('http',link):
             newlink = link
         else:
             newlink = url + link
@@ -136,12 +151,24 @@ elif mode == 'featurefilms':
     else:
         match = None
            
-    #thumb = re.compile('<td><a href=".+?"><img src="(.+?)" ></a></td>').findall(html)
+    thumb = re.compile('<td><a href=".+?"><img src="(.+?)" ></a></td>').findall(html)
 
     #Add each link found as a directory item
+    i = 0
     for link, name in match:
-        addon.add_directory({'mode': 'film', 'url': link}, name)  
+        addon.add_directory({'mode': 'film', 'url': link}, name, img=thumb[i])
+        i += 1
 
+elif mode == 'film':
+    url = addon.queries['url']
+    html = get_http_error(url)
+
+    match = re.compile('<td><a href="(.+?)".*><img src="(.+?)".*>').findall(html)
+    for link, thumb in match:
+        link = url + link.replace(url,'')
+        name = link.replace(url,'').replace('-',' ').replace('/',' ').title()
+        addon.add_video_item(link,{'title': name}, img=thumb)
+   
 elif mode == 'shortfilms':
     url = addon.queries['url']
     html = get_http_error(url)
@@ -158,12 +185,17 @@ elif mode == 'shortseason':
     url = addon.queries['url']
     html = get_http_error(url)
     
-    match = re.compile('<td><a href="(.+?)".*><img src="(.+?)".*></a></td>').findall(html)
-
-    # Add each link found as a video item
-    for link, thumb in match:
-        name = link.replace(url,'').replace('-',' ').replace('/',' ').title()
-        addon.add_video_item(link,{'title': name},img=thumb)
+    #Check if there are any videos embedded on the page
+    if re.search('[<embed src=|youtube.com/embed]',html):
+        addon.add_video_item(url,{'title': 'Video'})
+    else:
+        match = re.compile('<td><a href="(.+?)".*><img src="(.+?)".*></a></td>').findall(html)
+        
+        # Add each link found as a video item
+        for link, thumb in match:
+            name = link.replace(url,'').replace('-',' ').replace('/',' ').title()
+            link = url + link.replace(url,'')
+            addon.add_video_item(link,{'title': name},img=thumb)
 
 if not play:
     addon.end_of_directory()
