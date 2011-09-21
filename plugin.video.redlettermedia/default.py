@@ -45,13 +45,13 @@ def get_http_error(url):
                            
 if play:
 
-    html = get_http_error(play)
+    html = get_http_error(url)
     
     #Check if it's a YouTube video first
-    youtube = re.search('src="(http://www.youtube.com/[v|embed]*/[0-9A-Za-z_\-]+).+?"',html)  
+    youtubeid = re.search('src="(http://www.youtube.com/[v|embed]*/[0-9A-Za-z_\-]+).+?"',html)
     
-    if youtube:
-        stream_url = urlresolver.resolve(youtube.group(1))
+    if youtubeid:
+        stream_url = urlresolver.HostedMediaFile(host='youtube', media_id=youtubeid.group(1)).resolve()
     else:
     
         videos = re.compile('<embed.+?src="http://[a.]{0,2}blip.tv/[^#/]*[#/]{1}([^"]*)"', re.DOTALL).findall(html)
@@ -128,7 +128,7 @@ elif mode == 'plinkettreviews':
             newlink = link
         else:
             newlink = url + link
-        addon.add_video_item(newlink,{'title':name},img=thumb)
+        addon.add_video_item({'url': newlink},{'title':name},img=thumb)
 
 elif mode == 'halfbag':
     url = addon.queries['url']
@@ -138,7 +138,7 @@ elif mode == 'halfbag':
     
     episodenum = 1
     for link, thumb in match:
-        addon.add_video_item(link,{'title':'Episode ' + str(episodenum)},img=thumb)
+        addon.add_video_item({'url': link},{'title':'Episode ' + str(episodenum)},img=thumb)
         episodenum += 1
     
 elif mode == 'featurefilms':
@@ -167,7 +167,7 @@ elif mode == 'film':
     for link, thumb in match:
         link = url + link.replace(url,'')
         name = link.replace(url,'').replace('-',' ').replace('/',' ').title()
-        addon.add_video_item(link,{'title': name}, img=thumb)
+        addon.add_video_item({'url': link},{'title': name}, img=thumb)
    
 elif mode == 'shortfilms':
     url = addon.queries['url']
@@ -187,7 +187,7 @@ elif mode == 'shortseason':
     
     #Check if there are any videos embedded on the page
     if re.search('[<embed src=|youtube.com/embed]',html):
-        addon.add_video_item(url,{'title': 'Video'})
+        addon.add_video_item({'url': url},{'title': 'Video'})
     else:
         match = re.compile('<td><a href="(.+?)".*><img src="(.+?)".*></a></td>').findall(html)
         
@@ -195,7 +195,7 @@ elif mode == 'shortseason':
         for link, thumb in match:
             name = link.replace(url,'').replace('-',' ').replace('/',' ').title()
             link = url + link.replace(url,'')
-            addon.add_video_item(link,{'title': name},img=thumb)
+            addon.add_video_item({'url': link},{'title': name},img=thumb)
 
 if not play:
     addon.end_of_directory()

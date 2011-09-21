@@ -102,7 +102,7 @@ if play:
     if source:
         stream_url = source.resolve()
     else:
-        stream_url = ''   
+        stream_url = False
       
     #Play the stream
     if stream_url:

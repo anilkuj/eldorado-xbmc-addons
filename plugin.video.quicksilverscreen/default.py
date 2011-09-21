@@ -75,6 +75,8 @@ if play:
 
     match = re.compile('<td class="link_type">.+?<a target="_blank" href=".+?">(.+?)</a>.+?<td class="submitted_text"><a target="_blank" href="(.+?)">.+? Watch online on: <b>(.+?)</b></a></td>',re.DOTALL).findall(html)
     for video_type, link, host in match:
+        test = urlresolver.filter_urls(host)
+        print 'FILTER: ' + str(test)
         links.append(link)
         hosts.append(host + ' - ' + video_type)
     
@@ -88,10 +90,7 @@ if play:
         media_id = re.search('<input type="hidden" value="(.+?)" id="vid" />', html, re.DOTALL).group(1)
         host = re.search('<input type="hidden" value="(.+?)" id="vhost" />', html, re.DOTALL).group(1)
        
-        stream_url = urlresolver.HostedMediaFile(host=host, media_id=media_id).resolve()
-        print media_id
-        print stream_url
-         
+        stream_url = urlresolver.HostedMediaFile(host=host, media_id=media_id).resolve()     
     else:
         stream_url = False
   
