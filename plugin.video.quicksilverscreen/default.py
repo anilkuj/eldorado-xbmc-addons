@@ -51,35 +51,36 @@ def get_video_quick_list(url):
     html = net.http_GET(url).content
     
     match = re.compile('<div id="avatar">.+?<a href="(.+?)" >.+?<img class="browse_avatar" src="(.+?)" alt=".+?" title="(.+?)" />',re.DOTALL).findall(html)
+    total = len(match)
     for link, thumb, title in match:
         if section == 'tv':
-            addon.add_directory({'mode': 'tvseasons', 'url': main_url + link, 'section': 'tv'}, title, img=main_url + thumb)
+            addon.add_directory({'mode': 'tvseasons', 'url': main_url + link, 'section': 'tv'}, title, img=main_url + thumb, total_items=total)
         else:       
-            addon.add_video_item({'url': main_url + link}, {'title': title}, img=main_url + thumb)                                          
+            addon.add_video_item({'url': main_url + link}, {'title': title}, img=main_url + thumb, total_items=total)                                          
                              
 def get_video_list(url):
 
     html = net.http_GET(url).content
     match = re.compile('<td class="bullet.+?">.+?<a href="(.+?)" title=".+?" >(.+?)</a>',re.DOTALL).findall(html)
+    total = len(match)
     for link, title in match:
         if section == 'tv':
-            addon.add_directory({'mode': 'tvseasons', 'url': main_url + link, 'section': 'tv'}, title, img='')
+            addon.add_directory({'mode': 'tvseasons', 'url': main_url + link, 'section': 'tv'}, title, img='', total_items=total)
         else:
-            addon.add_video_item({'url': main_url + link}, {'title': title.strip()}, img='')     
+            addon.add_video_item({'url': main_url + link}, {'title': title.strip()}, img='', total_items=total)     
        
 if play:
 
     links = []
     hosts = []
+    hostses = []
     html = net.http_GET(url).content
 
     match = re.compile('<td class="link_type">.+?<a target="_blank" href=".+?">(.+?)</a>.+?<td class="submitted_text"><a target="_blank" href="(.+?)">.+? Watch online on: <b>(.+?)</b></a></td>',re.DOTALL).findall(html)
     for video_type, link, host in match:
-        test = urlresolver.filter_urls(host)
-        print 'FILTER: ' + str(test)
         links.append(link)
         hosts.append(host + ' - ' + video_type)
-    
+
     #Display dialog box of sources
     dialog = xbmcgui.Dialog()
     index = dialog.select('Choose a video source', hosts)
