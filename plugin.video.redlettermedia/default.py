@@ -46,50 +46,54 @@ def get_http_error(url):
 if play:
 
     html = get_http_error(url)
+      
+    #First check if there are multiple video parts on the page
+    parts = re.compile('>([PARTart]* [1-9]):<br />').findall(html)
     
-    #Check if it's a YouTube video first
-    youtubeid = re.search('src="(http://www.youtube.com/[v|embed]*/[0-9A-Za-z_\-]+).+?"',html)
-    
-    if youtubeid:
-        stream_url = urlresolver.HostedMediaFile(host='youtube', media_id=youtubeid.group(1)).resolve()
-    else:
-    
-        videos = re.compile('<embed.+?src="http://[a.]{0,2}blip.tv/[^#/]*[#/]{1}([^"]*)"', re.DOTALL).findall(html)
-        if len(videos) > 1:
-            parts = re.compile('<p>(<font size=4>|)(.+?):<br />.+?<embed.+?src="http://blip.tv/play/(.+?)"',re.DOTALL).findall(html)
-            videolist = []
-            for blank, name, id in parts:
-                videolist.append(name) 
-            dialog = xbmcgui.Dialog()
-            index = dialog.select('Choose the video', videolist)
-            if index >= 0:
-                api_url = APIPath % videos[index]
-            else:
-                api_url = False       
+    #Page has multiple video parts
+    if len(parts) > 1:
+        partlist = []
+        for part in parts:
+            partlist.append(part)    
+        
+        dialog = xbmcgui.Dialog()
+        index = dialog.select('Choose the video', partlist)
+        
+        #Take only selected part portion of the html
+        if index >= 0:          
+            html = re.search('>%s:<br />(.+?)</p>' % partlist[index],html,re.DOTALL).group(1)
         else:
-            if videos:
-                api_url = APIPath % videos[0]
-            else:
-                api_url = False
-       
-        if api_url:
+            html = False
+    
+    if html:                 
+    
+        #Check for youtube video first
+        youtube = re.search('src="(http://www.youtube.com/[v|embed]*/[0-9A-Za-z_\-]+).+?"',html)      
+        
+        if youtube:
+            stream_url = urlresolver.HostedMediaFile(url=youtube.group(1)).resolve()
+        else:
+        
+            video = re.search('<embed.+?src="http://[a.]{0,2}blip.tv/[^#/]*[#/]{1}([^"]*)"',html, re.DOTALL).group(1)
+            api_url = APIPath % video
+           
             links = []
             roles = []
-            
+                
             tree = parse(urllib.urlopen(api_url))
             for media in tree.getiterator('media'):
                 for link in media.getiterator('link'):
                     links.append(link.get('href'))
                     roles.append(media.findtext('role'))
-            
+                
             dialog = xbmcgui.Dialog()
             index = dialog.select('Choose a video source', roles)          
             if index >= 0:
                 stream_url = links[index]
             else:
                 stream_url = False
-        else:
-            stream_url = False
+    else:
+        stream_url = False
     
     #Play the stream
     if stream_url:
