@@ -47,7 +47,7 @@ def AZ_Menu(type, url):
 # Get List of Movies from given URL
 def GetMovieList(url):
 
-    html = net.http_GET(url).content
+    html = net.http_GET(play).content
     match = re.compile('<td width="97%" class="mnlcategorylist"><a href="(.+?)"><b>(.+?)</b></a>(.+?)<').findall(html)
 
     for link, movie, numlinks in match:
