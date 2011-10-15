@@ -87,8 +87,7 @@ def GetMovieList(url):
        else:
           newUrl = url + "/" + link
        meta = metaget.get_meta('', 'movie', movie, year)
-       infoLabels = create_infolabels(meta, movie)
-       addon.add_video_item({'url': newUrl, 'section': 'movies'}, infoLabels, total_items=len(match), img=infoLabels['thumb'], fanart=infoLabels['fanart'])
+       addon.add_video_item({'url': newUrl, 'section': 'movies'}, meta, total_items=len(match), img=meta['cover_url'], fanart=meta['backdrop_url'])
        
 if play:
 
@@ -184,10 +183,12 @@ elif mode == 'moviespopular':
     html = net.http_GET(url).content
     match = re.compile('''<tr>.+?<div align="center"><a.+?href="(.+?)">(.+?)</a></div></td>''',re.DOTALL).findall(html)
 
+    metaget=metahandlers.MetaData()
     # Add each link found as a directory item
     for link, name in match:
        if name != "...more":
-          addon.add_video_item({'url': link, 'section': 'movies'}, {'title': name})
+          meta = metaget.get_meta('', 'movie', name) 
+          addon.add_video_item({'url': link, 'section': 'movies'}, meta, total_items=len(match), img=meta['cover_url'], fanart=meta['backdrop_url'])
 
 elif mode == 'moviesyear':
     url = MovieUrl
@@ -229,8 +230,7 @@ elif mode == 'tvseries-az':
         match = re.compile('class="mnlcategorylist"><a href="(.+?)"><b>(.+?)</b>').findall(r.group(1))
         for link, name in match:
             meta = metaget.get_meta('', 'tvshow', name)
-            infoLabels = create_infolabels(meta, name)
-            addon.add_directory({'mode': 'tvseasons', 'url': TVUrl + link, 'section': 'tvshows', 'imdb_id': infoLabels['imdb_id']}, name, total_items=len(match), img=infoLabels['thumb'])  
+            addon.add_directory({'mode': 'tvseasons', 'url': TVUrl + link, 'section': 'tvshows', 'imdb_id': meta['imdb_id']}, name, total_items=len(match), img=meta['cover_url'])  
 
 elif mode == 'tvlastadded':
     html = net.http_GET(url).content
@@ -246,15 +246,14 @@ elif mode == 'tvpopular':
     for link, name in match:
         if name != "...more":
             meta = metaget.get_meta('', 'tvshow', name)
-            infoLabels = create_infolabels(meta, name)
-            addon.add_directory({'mode': 'tvseasons', 'url': link, 'section': 'tvshows', 'imdb_id': infoLabels['imdb_id']}, name, total_items=len(match), img=infoLabels['thumb'])       
+            addon.add_directory({'mode': 'tvseasons', 'url': link, 'section': 'tvshows', 'imdb_id': meta['imdb_id']}, name, total_items=len(match), img=meta['cover_url'])       
 
 elif mode == 'tvseasons':
     html = net.http_GET(url).content
     metaget=metahandlers.MetaData()
     match = re.compile('class="mnlcategorylist"><a href="(.+?)"><b>(.+?)</b></a>(.+?)</td>').findall(html)
-    seasons = re.compile('class="mnlcategorylist"><a href=".+?"><b>(.+?)</b></a>.+?</td>').findall(html)
-    season_meta = metaget.getSeasonCover(imdb_id, seasons, refresh=False)
+    seasons = re.compile('class="mnlcategorylist"><a href=".+?"><b>Season ([0-9]+)</b></a>.+?</td>').findall(html)
+    season_meta = metaget.get_seasons(imdb_id, seasons)
     num = 0
     for link, season, episodes in match:
         cur_season = season_meta[num]
@@ -263,13 +262,12 @@ elif mode == 'tvseasons':
 
 elif mode == 'tvepisodes':
     html = net.http_GET(url).content.encode('utf-8')
-    metaget=metahandlers.MetaData(b)
+    metaget=metahandlers.MetaData()
     match = re.compile('<td class="episode">.+?b>(.+?)</b>').findall(html)
     for name in match:
         episode_num = re.search('([0-9]{0,2}).', name).group(1)
         episode_meta=metaget.get_episode_meta(imdb_id, season, episode_num)
-        infoLabels = create_infolabels(episode_meta, name)
-        addon.add_video_item({'url': url, 'section': 'tvshows', 'video': name},infoLabels, total_items=len(match), img=infoLabels['thumb'])
+        addon.add_video_item({'url': url, 'section': 'tvshows', 'video': name},episode_meta, total_items=len(match), img=episode_meta['cover_url'])
 
 elif mode == 'resolver_settings':
     urlresolver.display_settings()
