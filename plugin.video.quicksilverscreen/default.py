@@ -4,7 +4,6 @@ import re, string
 from t0mm0.common.addon import Addon
 from t0mm0.common.net import Net
 import urlresolver
-#from metautils import metahandlers, metacontainers
 
 addon = Addon('plugin.video.quicksilverscreen', sys.argv)
 xaddon = xbmcaddon.Addon(id='plugin.video.quicksilverscreen')
@@ -23,7 +22,7 @@ print 'Section: ' + str(section)
 
 ################### Global Constants #################################
 
-main_url = 'http://www.quicksilverscreen.im/'
+main_url = 'http://www.quicksilverscreen.ch/'
 episode_url = main_url + 'episodes.php?e=%s&c=%s'
 addon_path = xaddon.getAddonInfo('path')
 icon_path = addon_path + "/icons/"
