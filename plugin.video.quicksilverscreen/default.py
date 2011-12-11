@@ -84,7 +84,7 @@ if play:
     dialog = xbmcgui.Dialog()
     index = dialog.select('Choose a video source', hosts)
     if index >= 0:
-        url = main_url + links[index]
+        url = links[index]
         
         html = net.http_GET(url).content
         media_id = re.search('<input type="hidden" value="(.+?)" id="vid" />', html, re.DOTALL).group(1)
