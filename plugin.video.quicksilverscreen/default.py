@@ -53,9 +53,9 @@ def get_video_quick_list(url):
     total = len(match)
     for link, thumb, title in match:
         if section == 'tv':
-            addon.add_directory({'mode': 'tvseasons', 'url': main_url + link, 'section': 'tv'}, title, img=main_url + thumb, total_items=total)
+            addon.add_directory({'mode': 'tvseasons', 'url': link, 'section': 'tv'}, title, img=main_url + thumb, total_items=total)
         else:       
-            addon.add_video_item({'url': main_url + link}, {'title': title}, img=main_url + thumb, total_items=total)                                          
+            addon.add_video_item({'url': link}, {'title': title}, img=main_url + thumb, total_items=total)                                          
                              
 def get_video_list(url):
 
@@ -64,9 +64,9 @@ def get_video_list(url):
     total = len(match)
     for link, title in match:
         if section == 'tv':
-            addon.add_directory({'mode': 'tvseasons', 'url': main_url + link, 'section': 'tv'}, title, img='', total_items=total)
+            addon.add_directory({'mode': 'tvseasons', 'url': link, 'section': 'tv'}, title, img='', total_items=total)
         else:
-            addon.add_video_item({'url': main_url + link}, {'title': title.strip()}, img='', total_items=total)     
+            addon.add_video_item({'url': link}, {'title': title.strip()}, img='', total_items=total)     
        
 if play:
 
@@ -122,7 +122,7 @@ elif mode == 'moviestop':
     if r:
         match = re.compile('<a id="big_pic[0-9]" href="(.+?)"><img src=".+?" alt=".+?" title="(.+?)"/></a>').findall(r)
         for link, title in match:
-            addon.add_video_item({'url': main_url + link}, {'title': title}, img='')
+            addon.add_video_item({'url': link}, {'title': title}, img='')
             
 elif mode == 'moviesaz':
    AZ_Menu('movieslist', 'videos?mt=1&l=%s')
@@ -188,7 +188,7 @@ elif mode == 'tvtop':
     if r:
         match = re.compile('<a id="big_pic[0-9]" href="(.+?)"><img src=".+?" alt=".+?" title="(.+?)"/></a>').findall(r)
         for link, title in match:
-            addon.add_directory({'mode': 'tvseasons', 'url': main_url + link, 'section': 'tv'}, title, img='')
+            addon.add_directory({'mode': 'tvseasons', 'url': link, 'section': 'tv'}, title, img='')
 
 elif mode == 'tvaz':
     AZ_Menu('tvseriesaz','videos?mt=0&l=%s')
@@ -212,7 +212,7 @@ elif mode == 'tvseasons':
     r = re.search('<p id="seasons_info_links">(.+?)</p>',html, re.DOTALL)
     match = re.compile('<a href="(.+?)".+?>(.+?)</a>',re.DOTALL).findall(r.group(1))
     for link, season in match:
-        addon.add_directory({'mode': 'tvepisodes', 'url': main_url + link}, season)
+        addon.add_directory({'mode': 'tvepisodes', 'url': link}, season)
 
 elif mode == 'tvepisodes':
     url = addon.queries['url']
