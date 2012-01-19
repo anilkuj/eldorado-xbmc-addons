@@ -1,24 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <addons>
-<addon id="plugin.video.projectfreetv"
-       name="Project Free TV"
-       version="0.0.7"
-       provider-name="Eldorado">
-  <requires>
-    <import addon="xbmc.python" version="1.0"/>
-    <import addon="script.module.urlresolver" version="0.0.1"/>
-    <import addon="script.module.t0mm0.common" version="0.0.1"/>
-  </requires>
-  <extension point="xbmc.python.pluginsource" library="default.py">
-        <provides>video</provides>
-  </extension>
-  <extension point="xbmc.addon.metadata">
-    <summary lang="en"></summary>
-    <description lang="en"></description>
-    <platform>all</platform>
-  </extension>
-</addon>
-
 <addon id="plugin.video.quicksilverscreen"
        name="Quick Silver Screen"
        version="0.0.5"
@@ -69,5 +50,27 @@
 		<description>Download and install addons by Eldorado</description>
 		<platform>all</platform>
 	</extension>
+</addon>
+
+<addon id="script.module.t0mm0.common" name="t0mm0's common stuff" version="0.0.2" provider-name="t0mm0">
+  <requires>
+    <import addon="xbmc.python" version="1.0" />
+  </requires>
+  <extension point="xbmc.python.module" library="lib" />
+  <extension point="xbmc.addon.metadata">
+    <platform>all</platform>
+  </extension>
+</addon>
+
+<addon id="script.module.urlresolver" name="urlresolver" version="0.0.1" provider-name="t0mm0 (inspired by unbehagan, anarchintosh)">
+  <requires>
+    <import addon="xbmc.python" version="1.0" />
+    <import addon="script.module.t0mm0.common" version="0.0.1"/>
+    <import addon="plugin.video.youtube"/>
+  </requires>
+  <extension point="xbmc.python.module" library="lib" />
+  <extension point="xbmc.addon.metadata">
+    <platform>all</platform>
+  </extension>
 </addon>
 </addons>
