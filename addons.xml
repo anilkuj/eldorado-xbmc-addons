@@ -2,19 +2,19 @@
 <addons>
 <addon id="plugin.video.quicksilverscreen"
        name="Quick Silver Screen"
-       version="0.0.5"
+       version="0.0.6"
        provider-name="Eldorado">
   <requires>
     <import addon="xbmc.python" version="1.0"/>
     <import addon="script.module.urlresolver" version="0.0.1"/>
-    <import addon="script.module.t0mm0.common" version="0.0.1"/>
+    <import addon="script.module.t0mm0.common" version="0.0.3"/>
   </requires>
   <extension point="xbmc.python.pluginsource" library="default.py">
         <provides>video</provides>
   </extension>
   <extension point="xbmc.addon.metadata">
     <summary lang="en"></summary>
-    <description lang="en"></description>
+    <description lang="en">Visit www.xbmchub.com for support</description>
     <platform>all</platform>
   </extension>
 </addon>
@@ -52,7 +52,7 @@
 	</extension>
 </addon>
 
-<addon id="script.module.t0mm0.common" name="t0mm0's common stuff" version="0.0.2" provider-name="t0mm0">
+<addon id="script.module.t0mm0.common" name="t0mm0's common stuff" version="0.0.3" provider-name="t0mm0">
   <requires>
     <import addon="xbmc.python" version="1.0" />
   </requires>
