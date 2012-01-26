@@ -363,7 +363,67 @@ class Addon:
         '''
         xbmc.executebuiltin('XBMC.Notification("%s","%s",%d,"%s")' %
                             (title, msg, delay, image))
+
+
+    def show_countdown(self, time_to_wait, title='', text=''):
+        '''
+        Show a countdown dialog with a progress bar for XBMC while delaying 
+        execution. Necessary for some filehosters eg. megaupload
         
+        The original version of this code came from Anarchintosh.
+        
+        Args:
+            time_to_wait (int): number of seconds to pause for.
+            
+        Kwargs:
+            title (str): Displayed in the title of the countdown dialog. Default
+            is blank.
+                         
+            text (str): A line of text to be displayed in the dialog. Default
+            is blank.
+            
+        Returns: 
+            ``True`` if countdown is allowed to complete, ``False`` if the 
+            user cancelled the countdown.
+        '''
+        
+        dialog = xbmcgui.DialogProgress()
+        ret = dialog.create(title)
+
+        self.log_notice('waiting %d secs' % time_to_wait)
+        
+        secs = 0
+        increment = 100 / time_to_wait
+
+        cancelled = False
+        while secs <= time_to_wait:
+
+            if (dialog.iscanceled()):
+                cancelled = True
+                break
+
+            if secs != 0: 
+                xbmc.sleep(1000)
+
+            secs_left = time_to_wait - secs
+            if secs_left == 0: 
+                percent = 100
+            else: 
+                percent = increment * secs
+            
+            remaining_display = ('Wait %d seconds for the ' +
+                    'video stream to activate...') % secs_left
+            dialog.update(percent, text, remaining_display)
+
+            secs += 1
+
+        if cancelled == True:     
+            self.log_notice('countdown cancelled')
+            return False
+        else:
+            self.log_debug('countdown finished waiting')
+            return True        
+
 
     def show_settings(self):
         '''Shows the settings dialog for this addon.'''
@@ -464,17 +524,23 @@ class Addon:
         self.get_playlist(xbmc.PLAYLIST_VIDEO, new)
 
 
-    def add_item(self, play, infolabels, img='', fanart='', resolved=False, 
-                 total_items=0, playlist=False, item_type='video'):
+    def add_item(self, queries, infolabels, contextmenu_items='', context_replace=False, img='',
+                 fanart='', resolved=False, total_items=0, playlist=False, item_type='video', 
+                 is_folder=False):
         '''
         Adds an item to the list of entries to be displayed in XBMC or to a 
         playlist.
         
         Use this method when you want users to be able to select this item to
-        start playback of a media file. You can either pass the direct URL to
-        the media file (in which case you must also set ``resolved=True``) or
-        some other string that will be passed as the 'play' query and can be  
-        used by the addon to resolve to a real media URL. 
+        start playback of a media file. ``queries`` is a dict that will be sent 
+        back to the addon when this item is selected::
+        
+            add_item({'host': 'youtube.com', 'media_id': 'ABC123XYZ'}, 
+                     {'title': 'A youtube vid'})
+                     
+        will add a link to::
+        
+            plugin://your.plugin.id/?host=youtube.com&media_id=ABC123XYZ
         
         .. seealso::
         
@@ -482,23 +548,26 @@ class Addon:
             :meth:`add_directory`
             
         Args:
-            play (str): The string to be sent to the plugin when the user 
-            plays this entry, or (if ``resolved=True``) a URL to the media to be
-            played.
+            queries (dict): A set of keys/values to be sent to the addon when 
+            the user selects this item.
             
             infolabels (dict): A dictionary of information about this media 
             (see the `XBMC Wiki InfoLabels entry 
             <http://wiki.xbmc.org/?title=InfoLabels>`_).
             
         Kwargs:
+            
+            contextmenu_items (list): A list of contextmenu items
+            
+            context_replace (bool): To replace the xbmc default contextmenu items
+                    
             img (str): A URL to an image file to be used as an icon for this
             entry.
             
             fanart (str): A URL to a fanart image for this entry.
             
-            resolved (bool): If ``False`` (default), `play` will be sent as a 
-            query to the addon when the item is played. If ``False``, `play` 
-            will be treated as a URL to the media item.
+            resolved (str): If not empty, ``queries`` will be ignored and 
+            instead the added item will be the exact contentes of ``resolved``.
             
             total_items (int): Total number of items to be added in this list.
             If supplied it enables XBMC to show a progress bar as the list of
@@ -514,15 +583,18 @@ class Addon:
         '''
         infolabels = self.unescape_dict(infolabels)
         if not resolved:
-            play['play'] = 'True'
-            play = self.build_plugin_url(play)
+            if not is_folder:
+                queries['play'] = 'True'
+            play = self.build_plugin_url(queries)
         else: 
-            play = play['url']
+            play = resolved
         listitem = xbmcgui.ListItem(infolabels['title'], iconImage=img, 
                                     thumbnailImage=img)
         listitem.setInfo(item_type, infolabels)
         listitem.setProperty('IsPlayable', 'true')
         listitem.setProperty('fanart_image', fanart)
+        if contextmenu_items:
+            listitem.addContextMenuItems(contextmenu_items, replaceItems=context_replace)        
         if playlist is not False:
             self.log_debug('adding item: %s - %s to playlist' % \
                                                     (infolabels['title'], play))
@@ -530,75 +602,45 @@ class Addon:
         else:
             self.log_debug('adding item: %s - %s' % (infolabels['title'], play))
             xbmcplugin.addDirectoryItem(self.handle, play, listitem, 
-                                        isFolder=False, totalItems=total_items)
+                                        isFolder=is_folder, 
+                                        totalItems=total_items)
 
 
-    def add_video_item(self, play, infolabels, img='', fanart='', 
-                       resolved=False, total_items=0, playlist=False):
+    def add_video_item(self, queries, infolabels, contextmenu_items='', context_replace=False,
+                       img='', fanart='', resolved=False, total_items=0, playlist=False):
         '''
         Convenience method to add a video item to the directory list or a 
         playlist.
         
         See :meth:`add_item` for full infomation
         '''
-        self.add_item(play, infolabels, img, fanart, resolved, total_items, 
-                      playlist, item_type='video')
+        self.add_item(queries, infolabels, contextmenu_items, context_replace, img, fanart,
+                      resolved, total_items, playlist, item_type='video')
 
 
-    def add_music_item(self, play, infolabels, img='', fanart='', 
-                       resolved=False, total_items=0, playlist=False):
+    def add_music_item(self, queries, infolabels, contextmenu_items='', context_replace=False,
+                        img='', fanart='', resolved=False, total_items=0, playlist=False):
         '''
         Convenience method to add a music item to the directory list or a 
         playlist.
         
         See :meth:`add_item` for full infomation
         '''
-        self.add_item(play, infolabels, img, fanart, resolved, total_items, 
-                      playlist, item_type='music')
+        self.add_item(queries, infolabels, contextmenu_items, img, context_replace, fanart,
+                      resolved, total_items, playlist, item_type='music')
 
 
-    def add_directory(self, queries, title, img='', fanart='', 
-                      total_items=0, is_folder=True):
+    def add_directory(self, queries, infolabels, contextmenu_items='', context_replace=False,
+                       img='', fanart='', total_items=0, is_folder=True):
         '''
-        Add a directory to the list of items to be displayed by XBMC.
+        Convenience method to add a directory to the display list or a 
+        playlist.
         
-        When selected by the user, directory will call the addon with the 
-        query values contained in `queries`.
-        
-        Args:
-            queries (dict): A set of keys/values to be sent to the addon when 
-            the user selects this item.
-            
-            title (str): The name to be displayed for this entry.
-        
-        Kwargs:
-            img (str): A URL to an image file to be used as an icon for this
-            entry.
-            
-            fanart (str): A URL to a fanart image for this entry.
-            
-            total_items (int): Total number of items to be added in this list.
-            If supplied it enables XBMC to show a progress bar as the list of
-            items is being built.
-
-            is_folder (bool): if ``True`` (default), when the user selects this 
-            item XBMC will expect the plugin to add another set of items to 
-            display. If ``False``, the 'Loading Directory' message will not be
-            displayed by XBMC (useful if you want a directory item to do 
-            something like pop up a dialog).
-        
+        See :meth:`add_item` for full infomation
         '''
-        title = self.unescape(title)
-        url = self.build_plugin_url(queries)
-        self.log_debug(u'adding dir: %s - %s' % (title, url))
-        listitem = xbmcgui.ListItem(title, iconImage=img, 
-                                    thumbnailImage=img)
-        if not fanart:
-            fanart = self.get_fanart()
-        listitem.setProperty('fanart_image', fanart)
-        xbmcplugin.addDirectoryItem(self.handle, url, listitem, 
-                                    isFolder=is_folder, totalItems=total_items)
-
+        self.add_item(queries, infolabels, contextmenu_items, context_replace, img, fanart,
+                      total_items=total_items, resolved=self.build_plugin_url(queries), 
+                      is_folder=is_folder)
 
     def end_of_directory(self):
         '''Tell XBMC that we have finished adding items to this directory.'''
@@ -643,17 +685,23 @@ class Addon:
         Returns:
             Cleaned string.
         '''
-        text = self.decode(text)
-        rep = {'&lt;': '<',
-               '&gt;': '>',
-               '&quot': '"',
-               '&rsquo;': '\'',
-               '&acute;': '\'',
-               }
-        for s, r in rep.items():
-            text = text.replace(s, r)
-        # this has to be last:
-        text = text.replace("&amp;", "&")
+        try:
+            text = self.decode(text)
+            rep = {'&lt;': '<',
+                   '&gt;': '>',
+                   '&quot': '"',
+                   '&rsquo;': '\'',
+                   '&acute;': '\'',
+                   }
+            for s, r in rep.items():
+                text = text.replace(s, r)
+            # this has to be last:
+            text = text.replace("&amp;", "&")
+        
+        #we don't want to fiddle with non-string types
+        except TypeError:
+            pass
+
         return text
         
 
