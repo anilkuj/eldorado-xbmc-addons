@@ -1,0 +1,3 @@
+v0.0.6 (Thursday, 26 January 2012):
+  - Updated to work with the latest t0mm0 common library
+ 
