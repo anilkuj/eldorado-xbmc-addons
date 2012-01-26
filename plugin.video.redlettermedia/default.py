@@ -101,10 +101,10 @@ if play:
        
     
 if mode == 'main': 
-    addon.add_directory({'mode': 'plinkett', 'url': MainUrl}, 'Plinkett Reviews', img=IconPath + 'plinkett.jpg')
-    addon.add_directory({'mode': 'halfbag', 'url': MainUrl + 'half-in-the-bag/'}, 'Half in the Bag', img=IconPath + 'halfbag.jpg')
-    addon.add_directory({'mode': 'featurefilms', 'url': MainUrl + 'films/'}, 'Feature Films')    
-    addon.add_directory({'mode': 'shortfilms', 'url': MainUrl + 'shorts/'}, 'Short Films')        
+    addon.add_directory({'mode': 'plinkett', 'url': MainUrl}, {'title': 'Plinkett Reviews'}, img=IconPath + 'plinkett.jpg')
+    addon.add_directory({'mode': 'halfbag', 'url': MainUrl + 'half-in-the-bag/'}, {'title': 'Half in the Bag'}, img=IconPath + 'halfbag.jpg')
+    addon.add_directory({'mode': 'featurefilms', 'url': MainUrl + 'films/'}, {'title': 'Feature Films'})    
+    addon.add_directory({'mode': 'shortfilms', 'url': MainUrl + 'shorts/'}, {'title': 'Short Films'})        
 
 elif mode == 'plinkett':
     url = addon.queries['url']
@@ -118,7 +118,7 @@ elif mode == 'plinkett':
 
     # Add each link found as a directory item
     for link, name in match:
-       addon.add_directory({'mode': 'plinkettreviews', 'url': link}, name)
+       addon.add_directory({'mode': 'plinkettreviews', 'url': link}, {'title': name})
 
 elif mode == 'plinkettreviews':
     url = addon.queries['url']
@@ -160,7 +160,7 @@ elif mode == 'featurefilms':
     #Add each link found as a directory item
     i = 0
     for link, name in match:
-        addon.add_directory({'mode': 'film', 'url': link}, name, img=thumb[i])
+        addon.add_directory({'mode': 'film', 'url': link}, {'title': name}, img=thumb[i])
         i += 1
 
 elif mode == 'film':
@@ -183,7 +183,7 @@ elif mode == 'shortfilms':
             
     # Add each link found as a directory item
     for link, name in match:
-       addon.add_directory({'mode': 'shortseason', 'url': link}, name)  
+       addon.add_directory({'mode': 'shortseason', 'url': link}, {'title': name})
 
 elif mode == 'shortseason':
     url = addon.queries['url']
