@@ -36,13 +36,13 @@ def AZ_Menu(type, url):
     addon.add_directory({'mode': type,
                          'url': main_url + url % 'etc',
                          'section': section,
-                         'letter': 'etc'},'#',
+                         'letter': 'etc'},{'title': '#'},
                          img='')
     for l in string.uppercase:
         addon.add_directory({'mode': type,
                              'url': main_url + url % l,
                              'section': section,
-                             'letter': l}, l,
+                             'letter': l}, {'title': l},
                              img='')
 
 
@@ -53,7 +53,7 @@ def get_video_quick_list(url):
     total = len(match)
     for link, thumb, title in match:
         if section == 'tv':
-            addon.add_directory({'mode': 'tvseasons', 'url': link, 'section': 'tv'}, title, img=main_url + thumb, total_items=total)
+            addon.add_directory({'mode': 'tvseasons', 'url': link, 'section': 'tv'}, {'title': title}, img=main_url + thumb, total_items=total)
         else:       
             addon.add_video_item({'url': link}, {'title': title}, img=main_url + thumb, total_items=total)                                          
                              
@@ -64,7 +64,7 @@ def get_video_list(url):
     total = len(match)
     for link, title in match:
         if section == 'tv':
-            addon.add_directory({'mode': 'tvseasons', 'url': link, 'section': 'tv'}, title, img='', total_items=total)
+            addon.add_directory({'mode': 'tvseasons', 'url': link, 'section': 'tv'}, {'title': title}, img='', total_items=total)
         else:
             addon.add_video_item({'url': link}, {'title': title.strip()}, img='', total_items=total)     
        
@@ -100,21 +100,21 @@ if play:
     
     
 if mode == 'main': 
-    addon.add_directory({'mode': 'movies', 'section': 'movies'}, 'Movies', img=icon_path + 'Movies.jpg')
-    addon.add_directory({'mode': 'tv', 'section': 'tv'}, 'TV Shows', img='')
-    addon.add_directory({'mode': 'cartoons', 'section': 'cartoons', 'url': main_url + 'videos?g=4&mt=1'}, 'Cartoons', img='')
-    addon.add_directory({'mode': 'documentary', 'section': 'documentary', 'url': main_url + 'videos?g=5&mt=1'}, 'Documentaries', img='')
-    addon.add_directory({'mode': 'musicvid', 'section': 'musicvid', 'url': main_url + 'videos?g=17&mt=1'}, 'Music Videos', img='')
-    addon.add_directory({'mode': 'resolver_settings'}, 'Resolver Settings', is_folder=False, img='')
+    addon.add_directory({'mode': 'movies', 'section': 'movies'}, {'title': 'Movies'}, img=icon_path + 'Movies.jpg')
+    addon.add_directory({'mode': 'tv', 'section': 'tv'}, {'title': 'TV Shows'}, img='')
+    addon.add_directory({'mode': 'cartoons', 'section': 'cartoons', 'url': main_url + 'videos?g=4&mt=1'}, {'title':'Cartoons'}, img='')
+    addon.add_directory({'mode': 'documentary', 'section': 'documentary', 'url': main_url + 'videos?g=5&mt=1'}, {'title': 'Documentaries'}, img='')
+    addon.add_directory({'mode': 'musicvid', 'section': 'musicvid', 'url': main_url + 'videos?g=17&mt=1'}, {'title': 'Music Videos'}, img='')
+    addon.add_directory({'mode': 'resolver_settings'}, {'title': 'Resolver Settings'}, is_folder=False, img='')
 
 elif mode == 'movies':
-    addon.add_directory({'mode': 'moviestop', 'url': main_url, 'section': 'movie'}, 'Top Movies', img='')
-    addon.add_directory({'mode': 'moviesaz', 'section': 'movie'}, 'A-Z', img='')
-    addon.add_directory({'mode': 'moviesgenre', 'url': main_url + 'videos?mt=1', 'section': 'movie'}, 'Genre', img='')
-    addon.add_directory({'mode': 'moviesrecent', 'url': main_url + 'videos?a=dr&mt=1', 'section': 'movie'}, 'Recently Released', img='')
-    addon.add_directory({'mode': 'moviesadded', 'url': main_url + 'videos?a=da&mt=1', 'section': 'movie'}, 'Recently Added', img='')
-    addon.add_directory({'mode': 'moviespopular', 'url': main_url + 'videos?a=m&mt=1', 'section': 'movie'}, 'Most Popular', img='')
-    addon.add_directory({'mode': 'moviesyear', 'url': main_url + 'videos?mt=1', 'section': 'movie'}, 'Year', img='')
+    addon.add_directory({'mode': 'moviestop', 'url': main_url, 'section': 'movie'}, {'title': 'Top Movies'}, img='')
+    addon.add_directory({'mode': 'moviesaz', 'section': 'movie'}, {'title': 'A-Z'}, img='')
+    addon.add_directory({'mode': 'moviesgenre', 'url': main_url + 'videos?mt=1', 'section': 'movie'}, {'title': 'Genre'}, img='')
+    addon.add_directory({'mode': 'moviesrecent', 'url': main_url + 'videos?a=dr&mt=1', 'section': 'movie'}, {'title': 'Recently Released'}, img='')
+    addon.add_directory({'mode': 'moviesadded', 'url': main_url + 'videos?a=da&mt=1', 'section': 'movie'}, {'title': 'Recently Added'}, img='')
+    addon.add_directory({'mode': 'moviespopular', 'url': main_url + 'videos?a=m&mt=1', 'section': 'movie'}, {'title': 'Most Popular'}, img='')
+    addon.add_directory({'mode': 'moviesyear', 'url': main_url + 'videos?mt=1', 'section': 'movie'}, {'title': 'Year'}, img='')
 
 elif mode == 'moviestop':
     html = net.http_GET(url).content
@@ -139,7 +139,7 @@ elif mode == 'moviesgenre':
     # Add each link found as a directory item
     for link, genre in match:
        if genre != 'Browse by A to Z':
-           addon.add_directory({'mode': 'movieslist', 'url': main_url + link[1:].replace('&amp;','&'), 'section': 'movies'}, genre)
+           addon.add_directory({'mode': 'movieslist', 'url': main_url + link[1:].replace('&amp;','&'), 'section': 'movies'}, {'title': genre})
   
 elif mode == 'moviesrecent':
     get_video_quick_list(url)
@@ -161,7 +161,7 @@ elif mode == 'moviesyear':
 
     # Add each link found as a directory item
     for link, year in match:
-        addon.add_directory({'mode': 'movieslist', 'url': main_url + link[1:].replace('&amp;','&'), 'section': 'movies'}, year)
+        addon.add_directory({'mode': 'movieslist', 'url': main_url + link[1:].replace('&amp;','&'), 'section': 'movies'}, {'title': year})
     
 elif mode == 'movieslist':
     get_video_list(url)   
@@ -176,11 +176,11 @@ elif mode == 'musicvid':
     get_video_list(url)
    
 elif mode == 'tv':
-    addon.add_directory({'mode': 'tvtop', 'url': main_url, 'section': 'tv'}, 'Top TV Shows')
+    addon.add_directory({'mode': 'tvtop', 'url': main_url, 'section': 'tv'}, {'title': 'Top TV Shows'})
     addon.add_directory({'mode': 'tvaz', 'section': 'tv'}, 'A-Z', img='')
-    addon.add_directory({'mode': 'tvrecent', 'url': main_url + 'videos?a=dr&mt=0', 'section': 'tv'}, 'Recently Aired')
-    addon.add_directory({'mode': 'tvadded', 'url': main_url + 'videos?a=da&mt=0', 'section': 'tv'}, 'Recently Added')
-    addon.add_directory({'mode': 'tvpopular', 'url': main_url + 'videos?a=m&mt=0', 'section': 'tv'}, 'Most Popular')
+    addon.add_directory({'mode': 'tvrecent', 'url': main_url + 'videos?a=dr&mt=0', 'section': 'tv'}, {'title': 'Recently Aired'})
+    addon.add_directory({'mode': 'tvadded', 'url': main_url + 'videos?a=da&mt=0', 'section': 'tv'}, {'title': 'Recently Added'})
+    addon.add_directory({'mode': 'tvpopular', 'url': main_url + 'videos?a=m&mt=0', 'section': 'tv'}, {'title': 'Most Popular'})
 
 elif mode == 'tvtop':
     html = net.http_GET(url).content
@@ -188,7 +188,7 @@ elif mode == 'tvtop':
     if r:
         match = re.compile('<a id="big_pic[0-9]" href="(.+?)"><img src=".+?" alt=".+?" title="(.+?)"/></a>').findall(r)
         for link, title in match:
-            addon.add_directory({'mode': 'tvseasons', 'url': link, 'section': 'tv'}, title, img='')
+            addon.add_directory({'mode': 'tvseasons', 'url': link, 'section': 'tv'}, {'title': title}, img='')
 
 elif mode == 'tvaz':
     AZ_Menu('tvseriesaz','videos?mt=0&l=%s')
@@ -212,7 +212,7 @@ elif mode == 'tvseasons':
     r = re.search('<p id="seasons_info_links">(.+?)</p>',html, re.DOTALL)
     match = re.compile('<a href="(.+?)".+?>(.+?)</a>',re.DOTALL).findall(r.group(1))
     for link, season in match:
-        addon.add_directory({'mode': 'tvepisodes', 'url': link}, season)
+        addon.add_directory({'mode': 'tvepisodes', 'url': link}, {'title': season})
 
 elif mode == 'tvepisodes':
     url = addon.queries['url']
