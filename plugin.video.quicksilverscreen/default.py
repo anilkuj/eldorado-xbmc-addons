@@ -177,7 +177,7 @@ elif mode == 'musicvid':
    
 elif mode == 'tv':
     addon.add_directory({'mode': 'tvtop', 'url': main_url, 'section': 'tv'}, {'title': 'Top TV Shows'})
-    addon.add_directory({'mode': 'tvaz', 'section': 'tv'}, 'A-Z', img='')
+    addon.add_directory({'mode': 'tvaz', 'section': 'tv'}, {'title':'A-Z'}, img='')
     addon.add_directory({'mode': 'tvrecent', 'url': main_url + 'videos?a=dr&mt=0', 'section': 'tv'}, {'title': 'Recently Aired'})
     addon.add_directory({'mode': 'tvadded', 'url': main_url + 'videos?a=da&mt=0', 'section': 'tv'}, {'title': 'Recently Added'})
     addon.add_directory({'mode': 'tvpopular', 'url': main_url + 'videos?a=m&mt=0', 'section': 'tv'}, {'title': 'Most Popular'})
