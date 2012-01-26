@@ -40,7 +40,7 @@
 
 <addon id="plugin.video.redlettermedia"
        name="Red Letter Media"
-       version="0.0.5"
+       version="0.0.6"
        provider-name="Eldorado">
   <requires>
     <import addon="xbmc.python" version="1.0"/>
@@ -53,7 +53,9 @@
   </extension>
   <extension point="xbmc.addon.metadata">
     <summary lang="en"></summary>
-    <description lang="en"></description>
+    <description lang="en">Visit www.xbmchub.com for support.
+
+Watch the infamous Harry Plinkett movie reviews as well as regular movie review show Half In The Bag</description>
     <platform>all</platform>
   </extension>
 </addon>
